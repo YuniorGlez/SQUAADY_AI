@@ -6,7 +6,7 @@ router.post('/webhooks', async (req, res) => {
     const { type, data } = req.body;
     console.log({data});
     console.log({type});
-    if (type === 'CommentCreated') {
+    if (type === 'Comment') {
         const comment = data.comment;
         const issue = data.issue;
         console.log({comment});
