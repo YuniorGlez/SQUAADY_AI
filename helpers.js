@@ -1,0 +1,38 @@
+const { Configuration, OpenAIApi } = require("openai");
+const { LinearClient } = require('@linear/sdk');
+
+const linearClient = new LinearClient({
+    apiKey: process.env.LINEAR_API_KEY
+})
+
+function millisecondsToStr(milliseconds) {
+    const seconds = Math.floor(milliseconds / 1000);
+    const minutes = Math.floor(seconds / 60);
+    const hours = Math.floor(minutes / 60);
+    const days = Math.floor(hours / 24);
+
+    const remainingSeconds = seconds % 60;
+    const remainingMinutes = minutes % 60;
+    const remainingHours = hours % 24;
+
+    let str = "";
+    if (days > 0) {
+        str += `${days}d `;
+    }
+    if (remainingHours > 0) {
+        str += `${remainingHours}h `;
+    }
+    if (remainingMinutes > 0) {
+        str += `${remainingMinutes}m `;
+    }
+    if (remainingSeconds > 0) {
+        str += `${remainingSeconds}s`;
+    }
+    return str.trim();
+}
+const configuration = new Configuration({
+    apiKey: process.env.OPENAI_API_KEY,
+});
+const openai = new OpenAIApi(configuration);
+
+module.exports = { millisecondsToStr, openai, linearClient };
