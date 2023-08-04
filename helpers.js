@@ -2,7 +2,8 @@ const { Configuration, OpenAIApi } = require("openai");
 const { LinearClient } = require('@linear/sdk');
 
 const linearClient = new LinearClient({
-    apiKey: process.env.LINEAR_API_KEY
+    apiKey: process.env.LINEAR_API_KEY,
+    accessToken: process.env.APP_TOKEN
 })
 
 function millisecondsToStr(milliseconds) {

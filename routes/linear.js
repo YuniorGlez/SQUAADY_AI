@@ -2,6 +2,19 @@ const { millisecondsToStr, openai, linearClient } = require('./../helpers');
 
 const router = require('express').Router();
 
+router.get('/app-callback', async (req, res) => {
+    console.log('Llamada al callback');
+    console.log({req});
+    return res.send('Ok')
+})
+router.get('/app-webhooks', async (req, res) => {
+    const { type, data } = req.body;
+    console.log('Llamada de la app');
+    console.log({type});
+    console.log({data});
+    return res.send('Ok');
+})
+
 router.post('/webhooks', async (req, res) => {
     const { type, data } = req.body;
     if (type === 'Comment' && data.body) {
@@ -128,6 +141,7 @@ router.get('/enhanced-metrics', async (req, res) => {
         res.status(500).json({ error: error.toString() });
     }
 });
+
 async function getFriendlyDescription(issue) {
     const prompt = `"Hola, soy un product manager que necesita proporcionar una actualización a nuestro cliente. Hemos completado la tarea '${issue.title} - ${issue.description}'. Necesito presentar esta tarea desde tres diferentes perspectivas: como una solución a un problema, cómo afectará al usuario final y qué valor aporta al negocio. 
 
