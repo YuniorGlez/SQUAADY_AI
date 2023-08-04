@@ -4,12 +4,16 @@ const router = require('express').Router();
 
 router.post('/webhooks', async (req, res) => {
     const { type, data } = req.body;
-
+    console.log({data});
+    console.log({type});
     if (type === 'CommentCreated') {
         const comment = data.comment;
         const issue = data.issue;
-
+        console.log({comment});
+        console.log({issue});
+        
         if (comment.body.startsWith('/description')) {
+            console.log('Entro al if');
             // Generate a client-friendly description and add it as a comment
             const friendlyDescription = await getFriendlyDescription(issue);
             await addCommentToTask(issue.id, friendlyDescription);
