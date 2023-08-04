@@ -4,14 +4,14 @@ const router = require('express').Router();
 
 router.get('/app-callback', async (req, res) => {
     console.log('Llamada al callback');
-    console.log({req});
+    console.log({ req });
     return res.send('Ok')
 })
 router.get('/app-webhooks', async (req, res) => {
     const { type, data } = req.body;
     console.log('Llamada de la app');
-    console.log({type});
-    console.log({data});
+    console.log({ type });
+    console.log({ data });
     return res.send('Ok');
 })
 
@@ -26,9 +26,9 @@ router.post('/webhooks', async (req, res) => {
             // Generate a client-friendly description and add it as a comment
             const friendlyDescription = await getFriendlyDescription(issue);
             await addCommentToTask(issue.id, friendlyDescription);
-        } else if (comment.body.startsWith('/code')) {
+        } else if (comment && comment.body.startsWith('/code')) {
             // Here you would handle generating code based on the issue's description or some other functionality
-        } else if (comment.body.startsWith('/report')) {
+        } else if (comment && comment.body.startsWith('/report')) {
             // Here you would handle generating a report for the issue
         }
     }
