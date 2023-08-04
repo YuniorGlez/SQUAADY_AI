@@ -26,9 +26,9 @@ router.post('/webhooks', async (req, res) => {
             // Generate a client-friendly description and add it as a comment
             const friendlyDescription = await getFriendlyDescription(issue);
             await addCommentToTask(issue.id, friendlyDescription);
-        } else if (comment && comment.body.startsWith('/code')) {
+        } else if (comment && comment.startsWith('/code')) {
             // Here you would handle generating code based on the issue's description or some other functionality
-        } else if (comment && comment.body.startsWith('/report')) {
+        } else if (comment && comment.startsWith('/report')) {
             // Here you would handle generating a report for the issue
         }
     }
