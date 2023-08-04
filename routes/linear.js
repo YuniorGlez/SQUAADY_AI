@@ -12,6 +12,17 @@ const linearClient = new LinearClient({
     apiKey: process.env.LINEAR_API_KEY
 })
 
+router.post('/webhooks', (req, res) => {
+    const { type, data } = req.body;
+
+    console.log({ data });
+    if (type === 'IssueMoved' && data.toName === 'In Production') {
+        // generar descripción y añadir comentario
+    }
+    return res.send('Ok');
+});
+
+
 router.get('/projects', async (req, res) => {
     try {
         const me = await linearClient.viewer;
@@ -99,37 +110,6 @@ router.get('/issue/:issueId', async (req, res) => {
             currentState,
             currentStateDuration,
             assignee,
-        });
-    } catch (error) {
-        res.status(500).json({ error: error.toString() });
-    }
-});
-router.get('/metrics', async (req, res) => {
-    try {
-        // Obtenemos todos los problemas
-        const issues = await linearClient.issues();
-        const issueData = await Promise.all(issues.nodes.map(async issue => {
-            const createdAt = issue.createdAt;
-            const currentState = (await issue.state)?.name;
-            const currentStateDuration = Date.now() - new Date(issue.updatedAt);
-            const assignee = (await issue.assignee)?.name;
-            return {
-                createdAt,
-                currentState,
-                currentStateDuration,
-                assignee,
-            };
-        }));
-
-        // Calculamos el tiempo promedio en el estado actual
-        const avgCurrentStateDuration = issueData.reduce((sum, issue) => sum + issue.currentStateDuration, 0) / issueData.length;
-
-        // Encontramos las issues que están por encima del promedio
-        const longRunningIssues = issueData.filter(issue => issue.currentStateDuration > avgCurrentStateDuration);
-
-        res.json({
-            avgCurrentStateDuration,
-            longRunningIssues,
         });
     } catch (error) {
         res.status(500).json({ error: error.toString() });
