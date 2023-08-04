@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>AI Assistant</title>
+    <style>
+        button {
+            margin-top: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>AI Assistant</h1>
+    <!-- En el archivo popup.html -->
+    <form id="my-form">
+        <label for="language">Lenguaje de programación:</label><br>
+        <input type="text" id="language" name="language"><br>
+        <label for="additional-info">Información adicional:</label><br>
+        <textarea id="additional-info" name="additional-info"></textarea><br>
+        <input type="submit" value="Enviar">
+    </form>
+
+    <button id="get-gpt-response">Obtener respuesta de GPT-3</button>
+    <div id="gpt-response"></div>
+
+    <script src="popup.js"></script>
+</body>
+
+</html>
