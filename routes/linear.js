@@ -20,7 +20,7 @@ router.post('/webhooks', async (req, res) => {
     if (type === 'Comment' && data.body) {
         const comment = data.body;
         const issueId = data.issue.id;
-        const issue = await linearClient.issues({ filter: { id: { eq: issueId } } });
+        const issue = await linearClient.issue(issueId);
         if (comment && comment.startsWith('/description')) {
             console.log('Entro al if');
             // Generate a client-friendly description and add it as a comment
