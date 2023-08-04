@@ -13,7 +13,7 @@ router.post('/webhooks', async (req, res) => {
         console.log({ comment });
         console.log({ issue });
 
-        if (comment.body.startsWith('/description')) {
+        if (comment && comment.body && comment.body.startsWith('/description')) {
             console.log('Entro al if');
             // Generate a client-friendly description and add it as a comment
             const friendlyDescription = await getFriendlyDescription(issue);
