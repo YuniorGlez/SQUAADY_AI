@@ -4,16 +4,11 @@ const router = require('express').Router();
 
 router.post('/webhooks', async (req, res) => {
     const { type, data } = req.body;
-    console.log({ data });
-    console.log({ type });
-    if (type === 'Comment') {
-        const comment = data.comment;
+    if (type === 'Comment' && data.body) {
+        const comment = data.body;
         const issueId = data.issue.id;
         const issue = await linearClient.issues({ filter: { id: { eq: issueId } } });
-        console.log({ comment });
-        console.log({ issue });
-
-        if (comment && comment.body && comment.body.startsWith('/description')) {
+        if (comment && comment.startsWith('/description')) {
             console.log('Entro al if');
             // Generate a client-friendly description and add it as a comment
             const friendlyDescription = await getFriendlyDescription(issue);
