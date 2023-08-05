@@ -52,6 +52,8 @@ router.post('/webhooks', async (req, res) => {
                 `
             }))).join('/n')
             const gptResponse = await getFriendlyReport({ issues, customPrompt, model })
+            await addCommentToTask(issue.id, gptResponse);
+
             // Here you would handle generating a report for the issue
         }
     }
