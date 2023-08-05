@@ -39,6 +39,9 @@ router.post('/webhooks', async (req, res) => {
         } else if (comment && comment.startsWith('/report')) {
             let taskIDs = [];
             if (comment.includes('IDS:')){
+                if (comment.includes('//')){
+                    comment = comment.replaceAll(/\\/gi,"");
+                }
                 console.log({model});
                 console.log({customPrompt});
 
