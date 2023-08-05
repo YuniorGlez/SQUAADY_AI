@@ -21,8 +21,6 @@ router.post('/webhooks', async (req, res) => {
         const comment = data.body;
         const issueId = data.issue.id;
         const issue = await linearClient.issue(issueId);
-        console.log({comment});
-        console.log({issue});
         let model = 'gpt-3.5-turbo';
         let customPrompt = '';
         if (comment.includes('model:')) {
@@ -42,9 +40,6 @@ router.post('/webhooks', async (req, res) => {
                 if (comment.includes('//')){
                     comment = comment.replaceAll(/\\/gi,"");
                 }
-                console.log({model});
-                console.log({customPrompt});
-
                 let idsString = comment.match(/IDS:\[(.*?)\]/)[1]; // IDS:[a,b,c,d] a,b,c,d
                 taskIDs.push(...idsString.split(',').map(t => `${issue.identifier.split('-')[0]}-${t.trim()}`));
             }else{
