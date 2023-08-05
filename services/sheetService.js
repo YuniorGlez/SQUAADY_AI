@@ -2,6 +2,11 @@ const { GoogleSpreadsheet } = require('google-spreadsheet');
 const { JWT } = require('google-auth-library');
 
 const SCOPES = ['https://www.googleapis.com/auth/spreadsheets'];
+const cellsConfiguration = {
+    "task2client": "A4",
+    "report": "A6",
+    "code": "A8"
+}
 
 class SheetService {
     constructor(sheetId) {
@@ -20,9 +25,9 @@ class SheetService {
         await this.sheet.loadCells('A1:J30');
     }
 
-    async getReportPrompt() {
+    async getPrompt(mode = "report") {
         await this.sheet.loadCells('A1:J30');
-        return this.sheet.getCellByA1('A6').value;
+        return this.sheet.getCellByA1(cellsConfiguration[mode]).value;
     }
 }
 const initialized = new SheetService('1xOknNihH1GHE32mHRduVBFoafjhWldAoy9G23ns31W8');

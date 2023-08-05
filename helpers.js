@@ -37,7 +37,11 @@ const configuration = new Configuration({
 const openai = new OpenAIApi(configuration);
 function replaceTemplateVars(template, vars) {
     return template.replace(/\${(.*?)}/g, function(match, varName) {
-        return vars[varName] || '';
+        if(varName.includes('.')) {
+            return vars[varName.split('.')[0]][varName.split('.')[1]] || '';
+        }else{
+            return vars[varName] || '';
+        }
     });
 }
 
