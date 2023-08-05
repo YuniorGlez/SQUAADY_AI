@@ -22,7 +22,7 @@ router.post('/webhooks', async (req, res) => {
         let comment = data.body;
         const issueId = data.issue.id;
         const issue = await linearClient.issue(issueId);
-        let model = 'gpt-3.5-turbo';
+        let model = 'gpt-4';
         let customPrompt = '';
         if (comment.includes('model:')) {
             let startIndex = comment.indexOf('model:') + 'model:'.length;
@@ -96,7 +96,7 @@ router.post('/gpt-response/:issueId', async (req, res) => {
             "${issue.title} - ${issue.description}". ¿Cómo podría abordarlo?`;
 
         const openaiResponse = await openai.createChatCompletion({
-            model: "gpt-3.5-turbo",
+            model: "gpt-4",
             messages: [{ role: "user", content: prompt }]
         });
 
@@ -168,7 +168,7 @@ router.get('/enhanced-metrics', async (req, res) => {
     }
 });
 
-async function getFriendlyDescription({ issue, customPrompt = '', model = 'gpt-3.5-turbo' }) {
+async function getFriendlyDescription({ issue, customPrompt = '', model = 'gpt-4' }) {
     const prompt = `"Hola, soy un product manager que necesita proporcionar una actualización a nuestro cliente. Hemos completado la tarea '${issue.title} - ${issue.description}'. Necesito presentar esta tarea desde tres diferentes perspectivas: como una solución a un problema, cómo afectará al usuario final y qué valor aporta al negocio. 
 
     Por favor, ayúdame a reformular esta tarea en términos sencillos y no técnicos que sean fáciles de entender para el cliente. Recuerda, cada descripción debe ser concisa, con un máximo de 250 caracteres.
@@ -196,7 +196,7 @@ async function getFriendlyDescription({ issue, customPrompt = '', model = 'gpt-3
     });
     return openaiResponse.data.choices[0].message.content.trim();
 }
-async function getFriendlyReport({ issues, customPrompt = '', model = 'gpt-3.5-turbo' }) {
+async function getFriendlyReport({ issues, customPrompt = '', model = 'gpt-4' }) {
     const sheetPrompt = await SheetService.getReportPrompt();
     const prompt = replaceTemplateVars(sheetPrompt, {issues, customPrompt});
 
