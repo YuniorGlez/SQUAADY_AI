@@ -18,7 +18,7 @@ router.get('/app-webhooks', async (req, res) => {
 router.post('/webhooks', async (req, res) => {
     const { type, data } = req.body;
     if (type === 'Comment' && data.body) {
-        const comment = data.body;
+        let comment = data.body;
         const issueId = data.issue.id;
         const issue = await linearClient.issue(issueId);
         let model = 'gpt-3.5-turbo';
