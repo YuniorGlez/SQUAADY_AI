@@ -1,4 +1,5 @@
-const { millisecondsToStr, openai, linearClient } = require('./../helpers');
+const SheetService = require('../services/sheetService');
+const { millisecondsToStr, openai, linearClient, replaceTemplateVars } = require('./../helpers');
 
 const router = require('express').Router();
 
@@ -196,98 +197,8 @@ async function getFriendlyDescription({ issue, customPrompt = '', model = 'gpt-3
     return openaiResponse.data.choices[0].message.content.trim();
 }
 async function getFriendlyReport({ issues, customPrompt = '', model = 'gpt-3.5-turbo' }) {
-    const prompt = `
-                Actúa como si fueras un experto en gestión de proyectos Agile y comunicación escrita.
-
-                Necesito redactar correos que reporten el progreso de nuestros Sprints. 
-                
-                Asegúrate de aplicar lo siguiente:
-
-                Necesito que el informe esté listo como para copiar y pegar y que solo me respondas con el correo, sin ninguna introducción ni frase final en tu respuesta.
-                Adicionalmente, te daré un ejemplo de como son nuestros reportes en nuestra empresa
-
-                [Temas a tratar: Logros del Sprint, obstáculos encontrados]
-                [Formato: Email]
-                [Estilo: Claro y conciso, con listas y markdown dónde consideres que mejorará el mensaje]
-                [Tono: Profesional, optimista]
-                [Audiencia: El cliente]
-                [Otras consideraciones:  ${customPrompt}]
-                
-                Ten en cuenta el siguiente contexto:
-                [Contexto: {{CONTEXTO}}]
-
-                ## ejemplo 
-                ¡Hola [Nombre]! Espero que estés teniendo una excelente tarde.
-
-
-
-                La semana que viene te daremos acceso a la beta para que puedas probar las funcionalidades finalizadas y prepararemos datos de prueba para que puedas utilizar el dashboard del Administrador.
-                
-                Por otro lado, ¿tenemos novedades de la landing con los formularios de alta? La necesitamos para poder conectarla con el dashboard del Administrador.
-                
-                
-                
-                Informe semanal:
-                
-                
-                
-                Tareas finalizadas:
-                
-                
-                Home:
-                
-                Vista sin mascotas.
-                
-                Vista con una mascota (aunque aún es necesario corregir para que desaparezca la sección "Mis Animales" cuando solo haya una mascota).
-                
-                Vista con más de una mascota.
-                
-                Vista detallada mascota
-                Vista QR / Pasaporte de mascota
-                
-                Mapas:
-                
-                Optimización del rendimiento general de los mapas.
-                
-                Corrección del diseño de las cards
-                
-                
-                General:
-                
-                
-                Onboarding: Onboarding al iniciar sesión por primera vez
-                
-                Copies: Realizamos los cambios solicitados por el cliente.
-                
-                Formulario registro mascota:
-                
-                Se unificó sexo y estado reproductivo
-                
-                Se modificó el botón toggle por el solicitado por el cliente
-                
-                Selector de fechas (date picker): Implementación de un selector de fechas para elegir fechas desde un calendario.
-                
-                Mensaje de actualización de la app
-                
-                
-                Tareas en progreso:
-                
-                
-                Bug: Corrección de los enlaces enviados por correo que no redireccionan correctamente en dominios que no son de Gmail.
-                Amyadvisor: Vista informativa
-                S.O.S Mascota: Modificación del diseño del cartel.
-                Edición de mascota: Editar fotos y estado reproductivo
-                
-                Si tienes alguna pregunta o necesitas más detalles sobre alguno de los puntos mencionados, avísame.
-                
-                
-                ¡Te deseo un excelente fin de semana!
-                ## end ejemplo
-
-                ##tareas del sprint FINALIZADAS
-                ${issues}
-                ## end tareas del sprint
-    `;
+    const sheetPrompt = SheetService.getReportPrompt();
+    const prompt = replaceTemplateVars(sheetPrompt, {issues, customPrompt});
 
     const openaiResponse = await openai.createChatCompletion({
         model,

@@ -35,5 +35,10 @@ const configuration = new Configuration({
     apiKey: process.env.OPENAI_API_KEY,
 });
 const openai = new OpenAIApi(configuration);
+function replaceTemplateVars(template, vars) {
+    return template.replace(/\${(.*?)}/g, function(match, varName) {
+        return vars[varName] || '';
+    });
+}
 
-module.exports = { millisecondsToStr, openai, linearClient };
+module.exports = { millisecondsToStr, openai, linearClient, replaceTemplateVars };
