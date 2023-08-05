@@ -23,7 +23,7 @@ router.post('/webhooks', async (req, res) => {
         const issueId = data.issue.id;
         const issue = await linearClient.issue(issueId);
         let model = 'gpt-4';
-        let customPrompt = comment;
+        let customPrompt = comment.split('Custom:').length > 1?comment.split('Custom:')[1]:'';
         if (comment.includes('model:')) {
             let startIndex = comment.indexOf('model:') + 'model:'.length;
             model = comment.substring(startIndex).split(' ')[0];
