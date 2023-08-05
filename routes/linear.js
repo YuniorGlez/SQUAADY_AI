@@ -36,13 +36,13 @@ router.post('/webhooks', async (req, res) => {
             // Here you would handle generating code based on the issue's description or some other functionality
         } else if (comment && comment.startsWith('/report')) {
             let taskIDs = [];
-            if (comment.includes('IDS:')){
-                if (comment.includes('//')){
-                    comment = comment.replaceAll(/\\/gi,"");
-                }
+            if (comment.includes('IDS:')) {
+                console.log({ comment });
+                comment = comment.replaceAll(/\\/gi, "");
+                console.log({ comment });
                 let idsString = comment.match(/IDS:\[(.*?)\]/)[1]; // IDS:[a,b,c,d] a,b,c,d
                 taskIDs.push(...idsString.split(',').map(t => `${issue.identifier.split('-')[0]}-${t.trim()}`));
-            }else{
+            } else {
                 let currentState = await issue.state;
             }
             const issues = (await Promise.all(taskIDs.map(async t => {
