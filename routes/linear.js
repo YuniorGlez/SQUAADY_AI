@@ -21,21 +21,34 @@ router.post('/webhooks', async (req, res) => {
         const comment = data.body;
         const issueId = data.issue.id;
         const issue = await linearClient.issue(issueId);
+        let model = 'gpt-3.5-turbo';
+        let customPrompt = '';
+        if (comment.includes('model:')) {
+            let startIndex = comment.indexOf('model:') + 'model:'.length;
+            model = comment.substring(startIndex).split(' ')[0];
+            customPrompt = comment.substring(startIndex + model.length);
+        }
         if (comment && comment.startsWith('/description')) {
-            console.log('Entro al if');
-            let model = 'gpt-3.5-turbo';
-            let customPrompt = '';
             // Generate a client-friendly description and add it as a comment
-            if (comment.includes('model:')) {
-                let startIndex = comment.indexOf('model:') + 'model:'.length;
-                model = comment.substring(startIndex).split(' ')[0];
-                customPrompt = comment.substring(startIndex + model.length);
-            }
             const friendlyDescription = await getFriendlyDescription({ issue, customPrompt, model });
             await addCommentToTask(issue.id, friendlyDescription);
         } else if (comment && comment.startsWith('/code')) {
             // Here you would handle generating code based on the issue's description or some other functionality
         } else if (comment && comment.startsWith('/report')) {
+            let taskIDs = [];
+            if (comment.includes('IDS:')){
+                let idsString = comment.match(/IDS:\[(.*?)\]/)[1]; // IDS:[a,b,c,d] a,b,c,d
+                taskIDs.push(...idsString.split(',').map(t => t.trim()));
+            }else{
+                let currentState = await issue.state;
+            }
+            const issues = (await Promise.all(taskIDs.map(async t => {
+                const issueInfo = (await linearClient.issue(t));
+                return `Tarea ${t}: ${issueInfo.title} 
+                Descripción: ${issueInfo.description}
+                `
+            }))).join('/n')
+            const gptResponse = await getFriendlyReport({ issues, customPrompt, model })
             // Here you would handle generating a report for the issue
         }
     }
@@ -169,6 +182,106 @@ async function getFriendlyDescription({ issue, customPrompt = '', model = 'gpt-3
     Desde el punto de vista de un cliente que ha pagado por un software, podrías ayudarme a expresar el valor que le puede aportar como valor al negocio del cliente?"
     
     ${customPrompt ? `Adicionalmente ten esto en cuenta: ${customPrompt}` : ''}
+    `;
+
+    const openaiResponse = await openai.createChatCompletion({
+        model,
+        messages: [{ role: "user", content: prompt }]
+    });
+    return openaiResponse.data.choices[0].message.content.trim();
+}
+async function getFriendlyReport({ issues, customPrompt = '', model = 'gpt-3.5-turbo' }) {
+    const prompt = `
+                Actúa como si fueras un experto en gestión de proyectos Agile y comunicación escrita.
+
+                Necesito redactar correos que reporten el progreso de nuestros Sprints. 
+                
+                Asegúrate de aplicar lo siguiente:
+
+                Necesito que el informe esté listo como para copiar y pegar y que solo me respondas con el correo, sin ninguna introducción ni frase final en tu respuesta.
+                Adicionalmente, te daré un ejemplo de como son nuestros reportes en nuestra empresa
+
+                [Temas a tratar: Logros del Sprint, obstáculos encontrados]
+                [Formato: Email]
+                [Estilo: Claro y conciso, con listas y markdown dónde consideres que mejorará el mensaje]
+                [Tono: Profesional, optimista]
+                [Audiencia: El cliente]
+                [Otras consideraciones:  ${customPrompt}]
+                
+                Ten en cuenta el siguiente contexto:
+                [Contexto: {{CONTEXTO}}]
+
+                ## ejemplo 
+                ¡Hola [Nombre]! Espero que estés teniendo una excelente tarde.
+
+
+
+                La semana que viene te daremos acceso a la beta para que puedas probar las funcionalidades finalizadas y prepararemos datos de prueba para que puedas utilizar el dashboard del Administrador.
+                
+                Por otro lado, ¿tenemos novedades de la landing con los formularios de alta? La necesitamos para poder conectarla con el dashboard del Administrador.
+                
+                
+                
+                Informe semanal:
+                
+                
+                
+                Tareas finalizadas:
+                
+                
+                Home:
+                
+                Vista sin mascotas.
+                
+                Vista con una mascota (aunque aún es necesario corregir para que desaparezca la sección "Mis Animales" cuando solo haya una mascota).
+                
+                Vista con más de una mascota.
+                
+                Vista detallada mascota
+                Vista QR / Pasaporte de mascota
+                
+                Mapas:
+                
+                Optimización del rendimiento general de los mapas.
+                
+                Corrección del diseño de las cards
+                
+                
+                General:
+                
+                
+                Onboarding: Onboarding al iniciar sesión por primera vez
+                
+                Copies: Realizamos los cambios solicitados por el cliente.
+                
+                Formulario registro mascota:
+                
+                Se unificó sexo y estado reproductivo
+                
+                Se modificó el botón toggle por el solicitado por el cliente
+                
+                Selector de fechas (date picker): Implementación de un selector de fechas para elegir fechas desde un calendario.
+                
+                Mensaje de actualización de la app
+                
+                
+                Tareas en progreso:
+                
+                
+                Bug: Corrección de los enlaces enviados por correo que no redireccionan correctamente en dominios que no son de Gmail.
+                Amyadvisor: Vista informativa
+                S.O.S Mascota: Modificación del diseño del cartel.
+                Edición de mascota: Editar fotos y estado reproductivo
+                
+                Si tienes alguna pregunta o necesitas más detalles sobre alguno de los puntos mencionados, avísame.
+                
+                
+                ¡Te deseo un excelente fin de semana!
+                ## end ejemplo
+
+                ##tareas del sprint FINALIZADAS
+                ${issues}
+                ## end tareas del sprint
     `;
 
     const openaiResponse = await openai.createChatCompletion({
