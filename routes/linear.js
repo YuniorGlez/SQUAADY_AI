@@ -45,7 +45,7 @@ router.post('/webhooks', async (req, res) => {
                 level = comment.substring(startIndex).split(' ')[0];
             }
             const friendlyDescription = await interactWithGPT({ issue, languages, level, customPrompt, model }, "code");
-            //await addCommentToTask(issue.id, friendlyDescription);
+            await addCommentToTask(issue.id, friendlyDescription);
             return res.json(friendlyDescription);
             // Here you would handle generating code based on the issue's description or some other functionality
         } else if (comment && comment.startsWith('/report')) {
