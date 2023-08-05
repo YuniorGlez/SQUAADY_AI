@@ -20,7 +20,8 @@ class SheetService {
         await this.sheet.loadCells('A1:J30');
     }
 
-    getReportPrompt() {
+    async getReportPrompt() {
+        await this.sheet.loadCells('A1:J30');
         return this.sheet.getCellByA1('A6').value;
     }
 }

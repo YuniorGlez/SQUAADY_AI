@@ -197,7 +197,7 @@ async function getFriendlyDescription({ issue, customPrompt = '', model = 'gpt-3
     return openaiResponse.data.choices[0].message.content.trim();
 }
 async function getFriendlyReport({ issues, customPrompt = '', model = 'gpt-3.5-turbo' }) {
-    const sheetPrompt = SheetService.getReportPrompt();
+    const sheetPrompt = await SheetService.getReportPrompt();
     const prompt = replaceTemplateVars(sheetPrompt, {issues, customPrompt});
 
     const openaiResponse = await openai.createChatCompletion({
