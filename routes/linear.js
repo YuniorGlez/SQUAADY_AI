@@ -38,7 +38,7 @@ router.post('/webhooks', async (req, res) => {
             let taskIDs = [];
             if (comment.includes('IDS:')){
                 let idsString = comment.match(/IDS:\[(.*?)\]/)[1]; // IDS:[a,b,c,d] a,b,c,d
-                taskIDs.push(...idsString.split(',').map(t => t.trim()));
+                taskIDs.push(...idsString.split(',').map(t => `${issue.identifier.split('-')[0]}-${t.trim()}`));
             }else{
                 let currentState = await issue.state;
             }
