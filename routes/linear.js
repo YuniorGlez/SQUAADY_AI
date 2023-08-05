@@ -23,8 +23,15 @@ router.post('/webhooks', async (req, res) => {
         const issue = await linearClient.issue(issueId);
         if (comment && comment.startsWith('/description')) {
             console.log('Entro al if');
+            let model = 'gpt-3.5-turbo';
+            let customPrompt = '';
             // Generate a client-friendly description and add it as a comment
-            const friendlyDescription = await getFriendlyDescription(issue);
+            if (comment.includes('model:')) {
+                let startIndex = comment.indexOf('model:') + 'model:'.length;
+                model = comment.substring(startIndex).split(' ')[0];
+                customPrompt = comment.substring(startIndex + model.length);
+            }
+            const friendlyDescription = await getFriendlyDescription({ issue, customPrompt, model });
             await addCommentToTask(issue.id, friendlyDescription);
         } else if (comment && comment.startsWith('/code')) {
             // Here you would handle generating code based on the issue's description or some other functionality
@@ -142,7 +149,7 @@ router.get('/enhanced-metrics', async (req, res) => {
     }
 });
 
-async function getFriendlyDescription(issue) {
+async function getFriendlyDescription({ issue, customPrompt = '', model = 'gpt-3.5-turbo' }) {
     const prompt = `"Hola, soy un product manager que necesita proporcionar una actualización a nuestro cliente. Hemos completado la tarea '${issue.title} - ${issue.description}'. Necesito presentar esta tarea desde tres diferentes perspectivas: como una solución a un problema, cómo afectará al usuario final y qué valor aporta al negocio. 
 
     Por favor, ayúdame a reformular esta tarea en términos sencillos y no técnicos que sean fáciles de entender para el cliente. Recuerda, cada descripción debe ser concisa, con un máximo de 250 caracteres.
@@ -151,19 +158,21 @@ async function getFriendlyDescription(issue) {
     
     Bloque 1 - ### solución: 
     
-    Podrías ayudarme a reformular esto en términos sencillos que describan el problema que estábamos resolviendo y cómo esta tarea proporciona una solución? 
+    Podrías ayudarme a reformular esto en términos sencillos que describan el problema que hemos resuelto y cómo hemos solucionado el problema?
     
     Bloque 2 - ### usuario: 
     
-    Podrías ayudarme a explicar cómo esta tarea impactará positivamente al usuario final en una sola oración?
+    Podrías ayudarme a explicar cómo esta tarea impactará positivamente en los usuarios finales en una sola oración?
     
     Bloque 3 - ### negocio:
     
-    Podrías ayudarme a expresar este valor de una manera que sea fácilmente comprensible para el cliente, en términos de cómo aporta valor al negocio del cliente?"
+    Desde el punto de vista de un cliente que ha pagado por un software, podrías ayudarme a expresar el valor que le puede aportar como valor al negocio del cliente?"
+    
+    ${customPrompt ? `Adicionalmente ten esto en cuenta: ${customPrompt}` : ''}
     `;
 
     const openaiResponse = await openai.createChatCompletion({
-        model: "gpt-3.5-turbo",
+        model,
         messages: [{ role: "user", content: prompt }]
     });
     return openaiResponse.data.choices[0].message.content.trim();
