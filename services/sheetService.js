@@ -21,6 +21,7 @@ class SheetService {
     }
 
     async getPrompt(command) {
+        await this.sheet.loadCells('A2:B20');
         for(let i = 1; i <= 19; i++) { // Iniciamos en 1 (fila 2) hasta 19 (fila 20)
             let commandCell = this.sheet.getCell(i, 1); // Columna B
             if(commandCell.value === command) {
