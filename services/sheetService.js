@@ -2,11 +2,6 @@ const { GoogleSpreadsheet } = require('google-spreadsheet');
 const { JWT } = require('google-auth-library');
 
 const SCOPES = ['https://www.googleapis.com/auth/spreadsheets'];
-const cellsConfiguration = {
-    "task2client": "A4",
-    "report": "A6",
-    "code": "A8"
-}
 
 class SheetService {
     constructor(sheetId) {
@@ -22,12 +17,17 @@ class SheetService {
     async initialize() {
         await this.doc.loadInfo();
         this.sheet = this.doc.sheetsByTitle['PROMPTS'];
-        await this.sheet.loadCells('A1:J30');
+        await this.sheet.loadCells('A2:B20');
     }
 
-    async getPrompt(mode = "report") {
-        await this.sheet.loadCells('A1:J30');
-        return this.sheet.getCellByA1(cellsConfiguration[mode]).value;
+    async getPrompt(command) {
+        for(let i = 1; i <= 19; i++) { // Iniciamos en 1 (fila 2) hasta 19 (fila 20)
+            let commandCell = this.sheet.getCell(i, 1); // Columna B
+            if(commandCell.value === command) {
+                return this.sheet.getCell(i, 0).value; // Columna A
+            }
+        }
+        return null;  // Si no encuentra el comando, devuelve null.
     }
 }
 const initialized = new SheetService('1xOknNihH1GHE32mHRduVBFoafjhWldAoy9G23ns31W8');

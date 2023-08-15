@@ -2,6 +2,8 @@ const SheetService = require('../services/sheetService');
 const { millisecondsToStr, openai, linearClient, replaceTemplateVars } = require('./../helpers');
 
 const router = require('express').Router();
+const ongoingChats = {};
+
 
 router.get('/app-callback', async (req, res) => {
     console.log('Llamada al callback');
@@ -15,65 +17,69 @@ router.get('/app-webhooks', async (req, res) => {
     console.log({ data });
     return res.send('Ok');
 })
-
 router.post('/webhooks', async (req, res) => {
     const { type, data } = req.body;
+    let openaiResponse;
     if (type === 'Comment' && data.body) {
-        let comment = data.body;
+        let comment = data.body.trim();
         const issueId = data.issue.id;
         const issue = await linearClient.issue(issueId);
-        let model = 'gpt-4';
-        let customPrompt = comment.split('Custom:').length > 1 ? comment.split('Custom:')[1] : '';
-        if (comment.includes('model:')) {
-            let startIndex = comment.indexOf('model:') + 'model:'.length;
-            model = comment.substring(startIndex).split(' ')[0];
-            customPrompt = comment.substring(startIndex + model.length);
-        }
-        if (comment && comment.startsWith('/description')) {
-            // Generate a client-friendly description and add it as a comment
-            const friendlyDescription = await interactWithGPT({ issue, customPrompt, model }, "task2client");
-            await addCommentToTask(issue.id, friendlyDescription);
-        } else if (comment && comment.startsWith('/code')) {
-            let languages = ["js"];
-            let level = "Junior";
-            if (comment.includes('languages:')) {
-                let startIndex = comment.indexOf('languages:') + 'languages:'.length;
-                languages = comment.substring(startIndex).split(' ')[0];
-            }
-            if (comment.includes('level:')) {
-                let startIndex = comment.indexOf('level:') + 'level:'.length;
-                level = comment.substring(startIndex).split(' ')[0];
-            }
-            const friendlyDescription = await interactWithGPT({ issue, languages, level, customPrompt, model }, "code");
-            await addCommentToTask(issue.id, friendlyDescription);
-            return res.json(friendlyDescription);
-            // Here you would handle generating code based on the issue's description or some other functionality
-        } else if (comment && comment.startsWith('/report')) {
-            let taskIDs = [];
-            if (comment.includes('IDS:')) {
-                console.log({ comment });
-                comment = comment.replaceAll(/\\/gi, "");
-                console.log({ comment });
-                let idsString = comment.match(/IDS:\[(.*?)\]/)[1]; // IDS:[a,b,c,d] a,b,c,d
-                taskIDs.push(...idsString.split(',').map(t => `${issue.identifier.split('-')[0]}-${t.trim()}`));
-            } else {
-                let currentState = await issue.state;
-            }
-            const issues = (await Promise.all(taskIDs.map(async t => {
-                const issueInfo = (await linearClient.issue(t));
-                return `Tarea ${t}: ${issueInfo.title} 
-                Descripción: ${issueInfo.description}
-                `
-            }))).join('/n')
-            const gptResponse = await interactWithGPT({ issues, customPrompt, model }, "report")
-            await addCommentToTask(issue.id, gptResponse);
+        
+        if (comment.startsWith('/')) {
+            const parts = comment.split(' ');
+            const command = parts[0];
+            const customPrompt = parts.slice(1).join(' ').trim();
 
-            // Here you would handle generating a report for the issue
+            let sheetPrompt;
+            if (command === '/continue') {
+                sheetPrompt = ''; 
+            } else {
+                sheetPrompt = await SheetService.getPrompt(command); 
+            }
+
+            if (sheetPrompt !== null) {
+                let templateData = {
+                    issue: {
+                        title: issue.title,
+                        description: issue.description
+                    }
+                };
+                
+                // Check for IDS and populate the issues
+                if (comment.includes('IDS:')) {
+                    let idsString = comment.match(/IDS:\[(.*?)\]/)[1]; 
+                    let taskIDs = idsString.split(',').map(t => `${issue.identifier.split('-')[0]}-${t.trim()}`);
+                    const issues = await Promise.all(taskIDs.map(id => linearClient.issue(id)));
+                    templateData.issues = issues.map(i => `ID: ${i.identifier}  TITLE:  ${i.title} DESCRIPCION: ${i.description}`).join('\n');
+                }
+
+                let prompt = replaceTemplateVars(sheetPrompt, templateData);
+                
+                if (customPrompt) {
+                    if (prompt.includes('${customPrompt}')) {
+                        prompt = prompt.replace('${customPrompt}', customPrompt);
+                    } else {
+                        prompt += ` Adicionalmente, quería comentarte lo siguiente: ${customPrompt}`;
+                    }
+                }
+
+                if (!ongoingChats[issueId] || comment.includes('forceNewChat:true')) {
+                    ongoingChats[issueId] = [];
+                }
+                
+                ongoingChats[issueId].push({ role: "user", content: prompt });
+                openaiResponse = await interactWithGPT({ messages: ongoingChats[issueId] });
+                
+                ongoingChats[issueId].push({ role: "assistant", content: openaiResponse });
+                await addCommentToTask(issue.id, openaiResponse);
+            } else {
+                await addCommentToTask(issue.id, "Comando no reconocido o no definido.");
+            }
         }
     }
-
-    res.sendStatus(200);
+    return res.send(openaiResponse);
 });
+
 
 
 router.get('/projects', async (req, res) => {
@@ -181,16 +187,13 @@ router.get('/enhanced-metrics', async (req, res) => {
     }
 });
 
-async function interactWithGPT(data, mode = "report") {
-    const sheetPrompt = await SheetService.getPrompt(mode);
-    const prompt = replaceTemplateVars(sheetPrompt, { ...data });
-
+async function interactWithGPT(data) {
+    const messages = data.messages;
     const openaiResponse = await openai.createChatCompletion({
-        model: data.model,
-        messages: [{ role: "user", content: prompt }]
+        model: "gpt-4",
+        messages: messages
     });
     return openaiResponse.data.choices[0].message.content.trim();
-
 }
 
 async function addCommentToTask(taskId, description) {
