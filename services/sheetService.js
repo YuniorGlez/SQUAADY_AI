@@ -17,11 +17,11 @@ class SheetService {
     async initialize() {
         await this.doc.loadInfo();
         this.sheet = this.doc.sheetsByTitle['PROMPTS'];
-        await this.sheet.loadCells('A2:B20');
+        await this.sheet.loadCells('A2:B50');
     }
 
     async getPrompt(command) {
-        await this.sheet.loadCells('A2:B20');
+        await this.sheet.loadCells('A2:B50');
         for(let i = 1; i <= 19; i++) { // Iniciamos en 1 (fila 2) hasta 19 (fila 20)
             let commandCell = this.sheet.getCell(i, 1); // Columna B
             if(commandCell.value === command) {
